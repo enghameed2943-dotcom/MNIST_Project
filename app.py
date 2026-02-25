@@ -129,3 +129,18 @@ def preprocess_canvas(image_rgba: np.ndarray) -> Image.Image:
     canvas28.paste(resized, (x_off, y_off))
 
     return canvas28
+# -----------------------------
+# Process Drawing
+# -----------------------------
+if canvas_result.image_data is not None:
+
+    img = preprocess_canvas(canvas_result.image_data)
+
+    # Show what model actually sees
+    st.image(img.resize((140, 140)), caption="Model input (28x28 scaled up)")
+
+    if st.button("Predict Drawing"):
+        pred, conf, probs = predict(img)
+        st.success(f"Prediction: {pred}")
+        st.info(f"Confidence: {conf*100:.2f}%")
+        show_probabilities(probs)
