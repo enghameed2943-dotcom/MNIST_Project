@@ -54,15 +54,28 @@ if uploaded:
     st.success(f"Predicted Digit: {pred}")
 
 # -----------------------------
-# Drawing Canvas Section
+# Draw Section
 # -----------------------------
-if canvas.image_data is not None:
-    img_array = canvas.image_data
+st.subheader("✏ Draw Digit")
 
-    # Convert RGBA to grayscale properly
-    img = Image.fromarray(img_array.astype("uint8")).convert("L")
+canvas_result = st_canvas(
+    stroke_width=15,
+    stroke_color="white",
+    background_color="black",
+    height=280,
+    width=280,
+    drawing_mode="freedraw",
+    key="canvas",
+)
 
-    # Invert if needed (MNIST is white digit on black)
+if canvas_result.image_data is not None:
+
+    img_array = canvas_result.image_data.astype(np.uint8)
+
+    # Convert RGBA → grayscale
+    img = Image.fromarray(img_array).convert("L")
+
+    # Invert to match MNIST (white digit on black)
     img = Image.fromarray(255 - np.array(img))
 
     if st.button("Predict Drawing"):
@@ -70,12 +83,3 @@ if canvas.image_data is not None:
         st.success(f"Prediction: {pred}")
         st.info(f"Confidence: {conf*100:.2f}%")
         show_probabilities(probs)
-
-if canvas_result.image_data is not None:
-    img_array = canvas_result.image_data.astype(np.uint8)
-    img = Image.fromarray(img_array)
-    img = img.convert("L")
-
-    if st.button("Predict Drawing"):
-        pred = predict(img)
-        st.success(f"Predicted Digit: {pred}")
