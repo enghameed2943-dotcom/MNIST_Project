@@ -1,6 +1,8 @@
 
+torch
+torchvision
 streamlit
 streamlit-drawable-canvas
-
-streamlit
-streamlit-drawable-canvas
+matplotlib
+scikit-learn
+pillow
