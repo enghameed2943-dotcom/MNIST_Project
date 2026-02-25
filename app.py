@@ -8,7 +8,7 @@ from src.model import CNN
 from streamlit_drawable_canvas import st_canvas
 import matplotlib.pyplot as plt
 import numpy as np
-
+st.image(img.resize((140, 140)), caption="Model input (28x28 scaled up)")
 def show_probabilities(probs):
     fig, ax = plt.subplots()
     ax.bar(range(10), probs)
@@ -91,18 +91,41 @@ canvas_result = st_canvas(
 
 
 
-if canvas_result.image_data is not None:
+import numpy as np
+from PIL import Image, ImageOps
 
-    img_array = canvas_result.image_data.astype(np.uint8)
+def preprocess_canvas(image_rgba: np.ndarray) -> Image.Image:
+    # RGBA -> grayscale
+    img = Image.fromarray(image_rgba.astype(np.uint8)).convert("L")
 
-    # Convert RGBA → grayscale
-    img = Image.fromarray(img_array).convert("L")
+    # Make sure background is black, digit is white (canvas is usually already this)
+    # If your canvas background is black and stroke is white, you usually DON'T invert.
+    # But some setups still need it. We'll auto-decide based on mean brightness:
+    if np.array(img).mean() > 127:
+        img = ImageOps.invert(img)
 
-    # Resize directly to 28x28
-    img = img.resize((28, 28))
+    arr = np.array(img)
 
-    if st.button("Predict Drawing"):
-        pred, conf, probs = predict(img)
-        st.success(f"Prediction: {pred}")
-        st.info(f"Confidence: {conf*100:.2f}%")
-        show_probabilities(probs)
+    # Find where the digit pixels are (simple threshold, not heavy binarization)
+    ys, xs = np.where(arr > 20)
+    if len(xs) == 0 or len(ys) == 0:
+        return img.resize((28, 28))
+
+    # Crop bounding box
+    x0, x1 = xs.min(), xs.max()
+    y0, y1 = ys.min(), ys.max()
+    cropped = img.crop((x0, y0, x1 + 1, y1 + 1))
+
+    # Resize keeping aspect ratio so max side = 20
+    w, h = cropped.size
+    scale = 20.0 / max(w, h)
+    new_w, new_h = max(1, int(w * scale)), max(1, int(h * scale))
+    resized = cropped.resize((new_w, new_h), Image.Resampling.BILINEAR)
+
+    # Paste into 28x28 center
+    canvas28 = Image.new("L", (28, 28), 0)
+    x_off = (28 - new_w) // 2
+    y_off = (28 - new_h) // 2
+    canvas28.paste(resized, (x_off, y_off))
+
+    return canvas28
