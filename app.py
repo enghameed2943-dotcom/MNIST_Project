@@ -8,6 +8,7 @@ from src.model import CNN
 from streamlit_drawable_canvas import st_canvas
 import matplotlib.pyplot as plt
 import cv2
+import numpy as np
 
 def show_probabilities(probs):
     fig, ax = plt.subplots()
@@ -90,34 +91,50 @@ canvas_result = st_canvas(
 
 
 
+
 if canvas_result.image_data is not None:
 
     img_array = canvas_result.image_data.astype(np.uint8)
 
-    # Convert RGBA to grayscale
-    img = cv2.cvtColor(img_array, cv2.COLOR_RGBA2GRAY)
+    # Convert to grayscale
+    gray = cv2.cvtColor(img_array, cv2.COLOR_RGBA2GRAY)
 
-    # Invert to match MNIST
-    img = 255 - img
+    # Invert
+    gray = 255 - gray
 
-    # Threshold to clean noise
-    _, img = cv2.threshold(img, 50, 255, cv2.THRESH_BINARY)
+    # Blur slightly (reduce harsh edges)
+    gray = cv2.GaussianBlur(gray, (5, 5), 0)
 
-    # Find bounding box of digit
-    coords = cv2.findNonZero(img)
-    if coords is not None:
-        x, y, w, h = cv2.boundingRect(coords)
-        img = img[y:y+h, x:x+w]
+    # Threshold
+    _, thresh = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY)
 
-        # Resize to 20x20
-        img = cv2.resize(img, (20, 20))
+    # Find contours
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        # Pad to 28x28
-        padded = np.zeros((28, 28))
-        padded[4:24, 4:24] = img
-        img = padded
+    if contours:
+        cnt = max(contours, key=cv2.contourArea)
+        x, y, w, h = cv2.boundingRect(cnt)
+        digit = thresh[y:y+h, x:x+w]
 
-        img = Image.fromarray(img.astype(np.uint8))
+        # Resize longest side to 20
+        if h > w:
+            new_h = 20
+            new_w = int(w * (20 / h))
+        else:
+            new_w = 20
+            new_h = int(h * (20 / w))
+
+        digit = cv2.resize(digit, (new_w, new_h))
+
+        # Create 28x28 canvas
+        canvas28 = np.zeros((28, 28), dtype=np.uint8)
+
+        x_offset = (28 - new_w) // 2
+        y_offset = (28 - new_h) // 2
+
+        canvas28[y_offset:y_offset+new_h, x_offset:x_offset+new_w] = digit
+
+        img = Image.fromarray(canvas28)
 
         if st.button("Predict Drawing"):
             pred, conf, probs = predict(img)
