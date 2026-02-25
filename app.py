@@ -32,12 +32,21 @@ transform = transforms.Compose([
     transforms.Normalize((0.1307,), (0.3081,))
 ])
 
+import torch.nn.functional as F
+
 def predict(image):
     x = transform(image).unsqueeze(0).to(device)
+
     with torch.no_grad():
         logits = model(x)
-        pred = torch.argmax(logits, dim=1).item()
-    return pred
+        probs = F.softmax(logits, dim=1)
+        confidence, pred = torch.max(probs, 1)
+
+    return (
+        pred.item(),
+        confidence.item(),
+        probs.cpu().numpy()[0]
+    )
 
 # -----------------------------
 # Upload Section
