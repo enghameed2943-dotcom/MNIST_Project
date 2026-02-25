@@ -77,18 +77,6 @@ if uploaded:
 # -----------------------------
 # Draw Section
 # -----------------------------
-st.subheader("✏ Draw Digit")
-
-canvas_result = st_canvas(
-    stroke_width=15,
-    stroke_color="white",
-    background_color="black",
-    height=280,
-    width=280,
-    drawing_mode="freedraw",
-    key="canvas",
-)
-
 
 
 
