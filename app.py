@@ -7,7 +7,6 @@ from torchvision import transforms
 from src.model import CNN
 from streamlit_drawable_canvas import st_canvas
 import matplotlib.pyplot as plt
-import cv2
 import numpy as np
 
 def show_probabilities(probs):
@@ -96,48 +95,14 @@ if canvas_result.image_data is not None:
 
     img_array = canvas_result.image_data.astype(np.uint8)
 
-    # Convert to grayscale
-    gray = cv2.cvtColor(img_array, cv2.COLOR_RGBA2GRAY)
+    # Convert RGBA → grayscale
+    img = Image.fromarray(img_array).convert("L")
 
-    # Invert
-    gray = 255 - gray
+    # Resize directly to 28x28
+    img = img.resize((28, 28))
 
-    # Blur slightly (reduce harsh edges)
-    gray = cv2.GaussianBlur(gray, (5, 5), 0)
-
-    # Threshold
-    _, thresh = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY)
-
-    # Find contours
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    if contours:
-        cnt = max(contours, key=cv2.contourArea)
-        x, y, w, h = cv2.boundingRect(cnt)
-        digit = thresh[y:y+h, x:x+w]
-
-        # Resize longest side to 20
-        if h > w:
-            new_h = 20
-            new_w = int(w * (20 / h))
-        else:
-            new_w = 20
-            new_h = int(h * (20 / w))
-
-        digit = cv2.resize(digit, (new_w, new_h))
-
-        # Create 28x28 canvas
-        canvas28 = np.zeros((28, 28), dtype=np.uint8)
-
-        x_offset = (28 - new_w) // 2
-        y_offset = (28 - new_h) // 2
-
-        canvas28[y_offset:y_offset+new_h, x_offset:x_offset+new_w] = digit
-
-        img = Image.fromarray(canvas28)
-
-        if st.button("Predict Drawing"):
-            pred, conf, probs = predict(img)
-            st.success(f"Prediction: {pred}")
-            st.info(f"Confidence: {conf*100:.2f}%")
-            show_probabilities(probs)
+    if st.button("Predict Drawing"):
+        pred, conf, probs = predict(img)
+        st.success(f"Prediction: {pred}")
+        st.info(f"Confidence: {conf*100:.2f}%")
+        show_probabilities(probs)
