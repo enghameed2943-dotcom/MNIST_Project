@@ -56,18 +56,20 @@ if uploaded:
 # -----------------------------
 # Drawing Canvas Section
 # -----------------------------
-st.subheader("✏️ Draw Digit")
+if canvas.image_data is not None:
+    img_array = canvas.image_data
 
-canvas_result = st_canvas(
-    fill_color="black",
-    stroke_width=15,
-    stroke_color="white",
-    background_color="black",
-    height=280,
-    width=280,
-    drawing_mode="freedraw",
-    key="canvas",
-)
+    # Convert RGBA to grayscale properly
+    img = Image.fromarray(img_array.astype("uint8")).convert("L")
+
+    # Invert if needed (MNIST is white digit on black)
+    img = Image.fromarray(255 - np.array(img))
+
+    if st.button("Predict Drawing"):
+        pred, conf, probs = predict(img)
+        st.success(f"Prediction: {pred}")
+        st.info(f"Confidence: {conf*100:.2f}%")
+        show_probabilities(probs)
 
 if canvas_result.image_data is not None:
     img_array = canvas_result.image_data.astype(np.uint8)
