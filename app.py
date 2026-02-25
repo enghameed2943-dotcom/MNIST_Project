@@ -89,7 +89,7 @@ canvas_result = st_canvas(
 )
 
 
-st.image(img.resize((140, 140)), caption="Model input (28x28 scaled up)")
+
 
 import numpy as np
 from PIL import Image, ImageOps
