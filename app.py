@@ -7,6 +7,7 @@ from torchvision import transforms
 from src.model import CNN
 from streamlit_drawable_canvas import st_canvas
 import matplotlib.pyplot as plt
+import cv2
 
 def show_probabilities(probs):
     fig, ax = plt.subplots()
@@ -87,18 +88,39 @@ canvas_result = st_canvas(
     key="canvas",
 )
 
+
+
 if canvas_result.image_data is not None:
 
     img_array = canvas_result.image_data.astype(np.uint8)
 
-    # Convert RGBA → grayscale
-    img = Image.fromarray(img_array).convert("L")
+    # Convert RGBA to grayscale
+    img = cv2.cvtColor(img_array, cv2.COLOR_RGBA2GRAY)
 
-    # Invert to match MNIST (white digit on black)
-    img = Image.fromarray(255 - np.array(img))
+    # Invert to match MNIST
+    img = 255 - img
 
-    if st.button("Predict Drawing"):
-        pred, conf, probs = predict(img)
-        st.success(f"Prediction: {pred}")
-        st.info(f"Confidence: {conf*100:.2f}%")
-        show_probabilities(probs)
+    # Threshold to clean noise
+    _, img = cv2.threshold(img, 50, 255, cv2.THRESH_BINARY)
+
+    # Find bounding box of digit
+    coords = cv2.findNonZero(img)
+    if coords is not None:
+        x, y, w, h = cv2.boundingRect(coords)
+        img = img[y:y+h, x:x+w]
+
+        # Resize to 20x20
+        img = cv2.resize(img, (20, 20))
+
+        # Pad to 28x28
+        padded = np.zeros((28, 28))
+        padded[4:24, 4:24] = img
+        img = padded
+
+        img = Image.fromarray(img.astype(np.uint8))
+
+        if st.button("Predict Drawing"):
+            pred, conf, probs = predict(img)
+            st.success(f"Prediction: {pred}")
+            st.info(f"Confidence: {conf*100:.2f}%")
+            show_probabilities(probs)
