@@ -6,6 +6,16 @@ from PIL import Image
 from torchvision import transforms
 from src.model import CNN
 from streamlit_drawable_canvas import st_canvas
+import matplotlib.pyplot as plt
+
+def show_probabilities(probs):
+    fig, ax = plt.subplots()
+    ax.bar(range(10), probs)
+    ax.set_xticks(range(10))
+    ax.set_xlabel("Digit")
+    ax.set_ylabel("Probability")
+    ax.set_ylim(0, 1)
+    st.pyplot(fig)
 
 st.set_page_config(page_title="MNIST Digit Recognizer", layout="centered")
 
