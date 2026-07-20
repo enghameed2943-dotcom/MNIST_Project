@@ -139,17 +139,13 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## 🌐 Open It as a Website
+## 🌐 Live Demo
 
-This project is ready to run as a web app from a GitHub link.
+The app is deployed and available at:
 
-- Push the repository to GitHub.
-- Open Streamlit Community Cloud.
-- Choose New app and select this repository.
-- Set the main file to app.py.
-- Deploy.
+https://mnistproject-pxgwpud3u6wqjz2svojpcn.streamlit.app/
 
-After deployment, the app will open automatically from a public URL.
+This link opens the live web app directly so interviewers can view it immediately.
 
 ---
 
