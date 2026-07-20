@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+.python-version
+.idea/
+.vscode/
+.DS_Store
+streamlit_app.log

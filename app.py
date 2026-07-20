@@ -2,15 +2,17 @@
 import streamlit as st
 import torch
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 from torchvision import transforms
-from src.model import CNN
 from streamlit_drawable_canvas import st_canvas
 import matplotlib.pyplot as plt
-import numpy as np
+import torch.nn.functional as F
+
+from src.model import CNN
+
 
 def show_probabilities(probs):
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(8, 4))
     ax.bar(range(10), probs)
     ax.set_xticks(range(10))
     ax.set_xlabel("Digit")
@@ -18,10 +20,28 @@ def show_probabilities(probs):
     ax.set_ylim(0, 1)
     st.pyplot(fig)
 
-st.set_page_config(page_title="MNIST Digit Recognizer", layout="centered")
+st.set_page_config(page_title="MNIST Digit Recognizer", page_icon="🧠", layout="wide")
 
-st.title("🧠 MNIST Handwritten Digit Recognizer")
-st.markdown("### Upload or Draw a Digit (0–9)")
+st.markdown(
+    """
+    <style>
+    .hero {
+        background: linear-gradient(135deg, #111827, #1f2937);
+        padding: 1.3rem 1.5rem;
+        border-radius: 16px;
+        color: white;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    '<div class="hero"><h1>🧠 MNIST Handwritten Digit Recognizer</h1><p>Upload an image or draw a digit directly in your browser. The model predicts the number instantly.</p></div>',
+    unsafe_allow_html=True,
+)
+
+st.markdown("### Choose one of the methods below to test the model.")
 
 # -----------------------------
 # Load Model
@@ -43,8 +63,6 @@ transform = transforms.Compose([
     transforms.Normalize((0.1307,), (0.3081,))
 ])
 
-import torch.nn.functional as F
-
 def predict(image):
     x = transform(image).unsqueeze(0).to(device)
 
@@ -62,37 +80,39 @@ def predict(image):
 # -----------------------------
 # Upload Section
 # -----------------------------
-st.subheader("📤 Upload Image")
+col1, col2 = st.columns([1, 1])
 
-uploaded = st.file_uploader("Upload digit image", type=["png", "jpg", "jpeg"])
+with col1:
+    st.subheader("📤 Upload Image")
+    uploaded = st.file_uploader("Upload digit image", type=["png", "jpg", "jpeg"])
 
-if uploaded:
-    img = Image.open(uploaded)
-    st.image(img, caption="Uploaded Image", width=200)
-
-    pred = predict(img)
-    st.success(f"Predicted Digit: {pred}")
+    if uploaded:
+        img = Image.open(uploaded)
+        st.image(img, caption="Uploaded Image", width=220)
+        pred, conf, probs = predict(img)
+        st.success(f"Predicted Digit: {pred}")
+        st.info(f"Confidence: {conf*100:.2f}%")
+        show_probabilities(probs)
 
 # -----------------------------
 # Draw Section
 # -----------------------------
-st.subheader("✏ Draw Digit")
+with col2:
+    st.subheader("✏ Draw Digit")
+    st.caption("Draw a single digit in the box, then click Predict Drawing.")
 
-canvas_result = st_canvas(
-    stroke_width=15,
-    stroke_color="white",
-    background_color="black",
-    height=280,
-    width=280,
-    drawing_mode="freedraw",
-    key="canvas",
-)
+    canvas_result = st_canvas(
+        stroke_width=15,
+        stroke_color="white",
+        background_color="black",
+        height=280,
+        width=280,
+        drawing_mode="freedraw",
+        key="canvas",
+    )
 
 
 
-
-import numpy as np
-from PIL import Image, ImageOps
 
 def preprocess_canvas(image_rgba: np.ndarray) -> Image.Image:
     # RGBA -> grayscale
@@ -132,15 +152,13 @@ def preprocess_canvas(image_rgba: np.ndarray) -> Image.Image:
 # -----------------------------
 # Process Drawing
 # -----------------------------
-if canvas_result.image_data is not None:
+with col2:
+    if canvas_result.image_data is not None:
+        img = preprocess_canvas(canvas_result.image_data)
+        st.image(img.resize((140, 140)), caption="Model input (28x28 scaled up)")
 
-    img = preprocess_canvas(canvas_result.image_data)
-
-    # Show what model actually sees
-    st.image(img.resize((140, 140)), caption="Model input (28x28 scaled up)")
-
-    if st.button("Predict Drawing"):
-        pred, conf, probs = predict(img)
-        st.success(f"Prediction: {pred}")
-        st.info(f"Confidence: {conf*100:.2f}%")
-        show_probabilities(probs)
+        if st.button("Predict Drawing"):
+            pred, conf, probs = predict(img)
+            st.success(f"Prediction: {pred}")
+            st.info(f"Confidence: {conf*100:.2f}%")
+            show_probabilities(probs)

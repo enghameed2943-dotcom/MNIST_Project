@@ -134,17 +134,22 @@ Handwritten Digit Recognition is a multi-class image classification task where:
 
 \## 🚀 Run Locally
 
-
-
 ```bash
-
 pip install -r requirements.txt
-
 streamlit run app.py
-
 ```
 
+## 🌐 Open It as a Website
 
+This project is ready to run as a web app from a GitHub link.
+
+- Push the repository to GitHub.
+- Open Streamlit Community Cloud.
+- Choose New app and select this repository.
+- Set the main file to app.py.
+- Deploy.
+
+After deployment, the app will open automatically from a public URL.
 
 ---
 
